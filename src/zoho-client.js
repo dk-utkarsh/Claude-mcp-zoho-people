@@ -56,12 +56,15 @@ export class ZohoClient {
     let data;
     try { data = JSON.parse(text); } catch { data = { raw: text, status: res.status }; }
 
-    const errCode = data?.response?.errors?.code ?? data?.errorCode;
-    if (errCode === 7201 || errCode === "7201") {
+    const errObj = data?.response?.errors || (data?.errorCode ? { code: data.errorCode, message: data.message } : null);
+    if (errObj) {
+      const code = errObj.code;
+      const msg = errObj.message || JSON.stringify(errObj);
       throw new Error(
-        `Zoho 7201 (URL Rule mismatch): API call hit ${this.baseUrl} but your OAuth token is for a different data center. ` +
-        `Set ZOHO_DOMAIN env var to match your account (com / in / eu / com.au / jp) and re-authorize. ` +
-        `Current domain: "${this.domain}".`
+        `Zoho API error ${code}: ${msg}. ` +
+        `URL: ${fullUrl}. ` +
+        `Domain: ${this.domain}. ` +
+        `Raw response: ${text.slice(0, 500)}`
       );
     }
     return data;
