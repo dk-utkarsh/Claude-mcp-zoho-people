@@ -54,6 +54,7 @@ const ZOHO_SCOPES = [
   "ZohoPeople.timetracker.ALL",
   "ZohoPeople.dashboard.ALL",
   "ZohoPeople.employee.ALL",
+  "ZohoPeople.performance.ALL",
 ].join(",");
 
 // Optional: server-stored Zoho OAuth credentials.
@@ -88,7 +89,7 @@ app.get("/", (_req, res) => {
     name: "zoho-people-mcp",
     version: "1.0.0",
     status: "running",
-    tools: 26,
+    tools: 37,
     transport: "streamable-http",
     oauth: true,
     zoho_domain: ZOHO_DOMAIN,
@@ -407,6 +408,56 @@ function createMcpServer(zohoClient) {
   }, async ({ formLinkName, recordId }) => {
     try { return ok(await zohoClient.request(`/forms/${formLinkName}/getDataByID`, { params: { recordId } })); } catch (e) { return fail(e.message); }
   });
+
+  // ── PERFORMANCE MANAGEMENT ──
+  server.tool("get_goals", "Fetch performance goals.", {
+    index: z.number().optional().default(1), limit: z.number().optional().default(200),
+  }, async ({ index, limit }) => { try { return ok(await zohoClient.getGoals(index, limit)); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_goal_by_id", "Fetch a goal by record ID.", {
+    recordId: z.string(),
+  }, async ({ recordId }) => { try { return ok(await zohoClient.getGoalById(recordId)); } catch (e) { return fail(e.message); } });
+
+  server.tool("create_goal", "Create a performance goal.", {
+    fields: z.record(z.string()).describe("Goal fields (e.g. Employee_ID, Goal_Name, Start_Date, End_Date, Description)"),
+  }, async ({ fields }) => { try { return ok(await zohoClient.createGoal(JSON.stringify(fields))); } catch (e) { return fail(e.message); } });
+
+  server.tool("update_goal", "Update a performance goal.", {
+    recordId: z.string(), fields: z.record(z.string()),
+  }, async ({ recordId, fields }) => { try { return ok(await zohoClient.updateGoal(recordId, JSON.stringify(fields))); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_kras", "Fetch Key Result Areas (KRAs).", {
+    index: z.number().optional().default(1), limit: z.number().optional().default(200),
+  }, async ({ index, limit }) => { try { return ok(await zohoClient.getKRAs(index, limit)); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_kra_by_id", "Fetch a KRA by record ID.", {
+    recordId: z.string(),
+  }, async ({ recordId }) => { try { return ok(await zohoClient.getKRAById(recordId)); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_skillsets", "Fetch skillsets / competencies.", {
+    index: z.number().optional().default(1), limit: z.number().optional().default(200),
+  }, async ({ index, limit }) => { try { return ok(await zohoClient.getSkillsets(index, limit)); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_reviews", "Fetch performance reviews / appraisals.", {
+    index: z.number().optional().default(1), limit: z.number().optional().default(200),
+  }, async ({ index, limit }) => { try { return ok(await zohoClient.getReviews(index, limit)); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_review_by_id", "Fetch a review by record ID.", {
+    recordId: z.string(),
+  }, async ({ recordId }) => { try { return ok(await zohoClient.getReviewById(recordId)); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_feedback", "Fetch feedback records.", {
+    index: z.number().optional().default(1), limit: z.number().optional().default(200),
+  }, async ({ index, limit }) => { try { return ok(await zohoClient.getFeedback(index, limit)); } catch (e) { return fail(e.message); } });
+
+  server.tool("submit_feedback", "Submit feedback.", {
+    fields: z.record(z.string()).describe("Feedback fields (e.g. From_Employee, To_Employee, Feedback, Type)"),
+  }, async ({ fields }) => { try { return ok(await zohoClient.submitFeedback(JSON.stringify(fields))); } catch (e) { return fail(e.message); } });
+
+  server.tool("get_performance_by_employee", "Get performance records (goals/KRAs/reviews/feedback) for a specific employee. Pass formLinkName: goal, kra, review, feedback.", {
+    formLinkName: z.enum(["goal", "kra", "review", "feedback", "skillset"]),
+    employeeId: z.string(),
+  }, async ({ formLinkName, employeeId }) => { try { return ok(await zohoClient.getPerformanceByEmployee(formLinkName, employeeId)); } catch (e) { return fail(e.message); } });
 
   return server;
 }

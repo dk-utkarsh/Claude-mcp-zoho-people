@@ -111,4 +111,28 @@ export class ZohoClient {
   addTimeLog(empId, projId, jobId, date, hrs, desc) { const b = { empId, projectId: projId, jobId, workDate: date, hours: `${hrs}`, dateFormat: "yyyy-MM-dd" }; if (desc) b.description = desc; return this.request("/timetracker/addtimelog", { method: "POST", body: b }); }
   getTimesheetProjects() { return this.request("/timetracker/getprojects"); }
   getTimesheetJobs() { return this.request("/timetracker/getjobs"); }
+
+  // ── PERFORMANCE MANAGEMENT ──
+  // Goals
+  getGoals(i = 1, l = 200) { return this.request("/forms/goal/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  getGoalById(id) { return this.request("/forms/goal/getDataByID", { params: { recordId: id } }); }
+  createGoal(data) { return this.request("/forms/goal/insertRecord", { method: "POST", body: { inputData: data } }); }
+  updateGoal(id, data) { return this.request("/forms/goal/updateRecord", { method: "POST", body: { recordId: id, inputData: data } }); }
+  // KRAs (Key Result Areas)
+  getKRAs(i = 1, l = 200) { return this.request("/forms/kra/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  getKRAById(id) { return this.request("/forms/kra/getDataByID", { params: { recordId: id } }); }
+  // Skillsets / Competencies
+  getSkillsets(i = 1, l = 200) { return this.request("/forms/skillset/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  // Reviews / Appraisals
+  getReviews(i = 1, l = 200) { return this.request("/forms/review/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  getReviewById(id) { return this.request("/forms/review/getDataByID", { params: { recordId: id } }); }
+  // Feedback
+  getFeedback(i = 1, l = 200) { return this.request("/forms/feedback/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  submitFeedback(data) { return this.request("/forms/feedback/insertRecord", { method: "POST", body: { inputData: data } }); }
+  // Performance records by employee — uses the generic forms search
+  getPerformanceByEmployee(formLinkName, empId) {
+    return this.request(`/forms/${formLinkName}/getRecords`, {
+      params: { searchColumn: "Employee_ID", searchValue: empId },
+    });
+  }
 }
