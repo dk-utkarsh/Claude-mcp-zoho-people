@@ -80,11 +80,11 @@ export class ZohoClient {
 
   // ── EMPLOYEES ──
   _emp(id) { return id.includes("@") ? { emailId: id } : { empId: id }; }
-  getEmployees(i = 1, l = 200) { return this.request("/forms/json/employee/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  getEmployeeById(id) { return this.request("/forms/json/employee/getDataByID", { params: { recordId: id } }); }
-  searchEmployees(col, val) { return this.request("/forms/json/employee/getRecords", { params: { searchColumn: col, searchValue: val } }); }
-  createEmployee(data) { return this.request("/forms/json/employee/insertRecord", { method: "POST", body: { inputData: data } }); }
-  updateEmployee(id, data) { return this.request("/forms/json/employee/updateRecord", { method: "POST", body: { recordId: id, inputData: data } }); }
+  getEmployees(i = 1, l = 200) { return this.request("/forms/employee/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  getEmployeeById(id) { return this.request("/forms/employee/getDataByID", { params: { recordId: id } }); }
+  searchEmployees(col, val) { return this.request("/forms/employee/getRecords", { params: { searchColumn: col, searchValue: val } }); }
+  createEmployee(data) { return this.request("/forms/employee/insertRecord", { method: "POST", body: { inputData: data } }); }
+  updateEmployee(id, data) { return this.request("/forms/employee/updateRecord", { method: "POST", body: { recordId: id, inputData: data } }); }
 
   // ── ATTENDANCE ──
   checkIn(empId, time) { const p = { ...this._emp(empId), dateFormat: "yyyy-MM-dd HH:mm:ss" }; if (time) p.checkIn = time; return this.request("/attendance", { method: "POST", body: p }); }
@@ -99,17 +99,17 @@ export class ZohoClient {
 
   // ── LEAVE ──
   getLeaveTypes(uid) { return this.request("/leave/getLeaveTypeDetails", { params: { userId: uid } }); }
-  getLeaveRecords(uid, sd, ed) { const p = {}; if (uid) p.userId = uid; if (sd) p.sdate = sd; if (ed) p.edate = ed; return this.request("/forms/json/leave/getRecords", { params: p }); }
-  applyLeave(data) { return this.request("/forms/json/leave/insertRecord", { method: "POST", body: { inputData: data } }); }
+  getLeaveRecords(uid, sd, ed) { const p = {}; if (uid) p.userId = uid; if (sd) p.sdate = sd; if (ed) p.edate = ed; return this.request("/forms/leave/getRecords", { params: p }); }
+  applyLeave(data) { return this.request("/forms/leave/insertRecord", { method: "POST", body: { inputData: data } }); }
   getLeaveBalance(uid) { const p = {}; if (uid) p.userId = uid; return this.request("/v2/leavetracker/reports/bookedAndBalance", { params: p }); }
   getLeaveUserReport(uid) { const p = {}; if (uid) p.userId = uid; return this.request("/v2/leavetracker/reports/user", { params: p }); }
 
   // ── DEPARTMENTS ──
-  getDepartments(i = 1, l = 200) { return this.request("/forms/json/department/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  createDepartment(data) { return this.request("/forms/json/department/insertRecord", { method: "POST", body: { inputData: data } }); }
+  getDepartments(i = 1, l = 200) { return this.request("/forms/department/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  createDepartment(data) { return this.request("/forms/department/insertRecord", { method: "POST", body: { inputData: data } }); }
 
   // ── DESIGNATIONS ──
-  getDesignations(i = 1, l = 200) { return this.request("/forms/json/designation/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  getDesignations(i = 1, l = 200) { return this.request("/forms/designation/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
 
   // ── TIMESHEETS ──
   getTimesheets(empId, sd, ed) { const p = {}; if (empId) p.empId = empId; if (sd) p.sdate = sd; if (ed) p.edate = ed; return this.request("/timetracker/gettimesheet", { params: p }); }

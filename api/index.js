@@ -398,14 +398,14 @@ function createMcpServer(zohoClient) {
       const p = { sIndex: `${index}`, limit: `${limit}` };
       if (searchColumn) p.searchColumn = searchColumn;
       if (searchValue) p.searchValue = searchValue;
-      return ok(await zohoClient.request(`/forms/json/${formLinkName}/getRecords`, { params: p }));
+      return ok(await zohoClient.request(`/forms/${formLinkName}/getRecords`, { params: p }));
     } catch (e) { return fail(e.message); }
   });
 
   server.tool("get_form_record_by_id", "Fetch single record from any form.", {
     formLinkName: z.string(), recordId: z.string(),
   }, async ({ formLinkName, recordId }) => {
-    try { return ok(await zohoClient.request(`/forms/json/${formLinkName}/getDataByID`, { params: { recordId } })); } catch (e) { return fail(e.message); }
+    try { return ok(await zohoClient.request(`/forms/${formLinkName}/getDataByID`, { params: { recordId } })); } catch (e) { return fail(e.message); }
   });
 
   return server;
