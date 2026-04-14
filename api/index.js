@@ -101,17 +101,18 @@ app.get("/.well-known/oauth-authorization-server", (req, res) => {
   const host = req.headers["x-forwarded-host"] || req.get("host");
   const serverUrl = process.env.PUBLIC_URL || `${proto}://${host}`;
 
-  res.json({
+  const meta = {
     issuer: serverUrl,
     authorization_endpoint: `${serverUrl}/authorize`,
     token_endpoint: `${serverUrl}/token`,
-    registration_endpoint: `${serverUrl}/register`,
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["client_secret_post"],
     scopes_supported: ZOHO_SCOPES.split(","),
-  });
+  };
+  if (process.env.ENABLE_DCR === "true") meta.registration_endpoint = `${serverUrl}/register`;
+  res.json(meta);
 });
 
 // ─────────────────────────────────────────────
@@ -174,9 +175,29 @@ app.post("/token", express.urlencoded({ extended: false }), async (req, res) => 
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: form.toString(),
     });
-    const data = await zohoRes.json();
+    const text = await zohoRes.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+    if (data.error || !data.access_token) {
+      console.error("[/token] Zoho rejected:", {
+        status: zohoRes.status,
+        grant_type,
+        accounts_url: ACCOUNTS_URL,
+        response: data,
+      });
+      return res.status(400).json({
+        error: data.error || "invalid_grant",
+        error_description: data.error_description ||
+          `Zoho ${ACCOUNTS_URL} returned: ${JSON.stringify(data)}. ` +
+          `Check: (1) Client ID/Secret match ${ACCOUNTS_URL.replace("accounts", "api-console")}, ` +
+          `(2) redirect URI is exactly "https://claude.ai/api/mcp/auth_callback", ` +
+          `(3) app type is "Server-based Application".`,
+      });
+    }
     res.status(zohoRes.status).json(data);
   } catch (err) {
+    console.error("[/token] network error:", err);
     res.status(502).json({ error: "token_exchange_failed", error_description: err.message });
   }
 });
