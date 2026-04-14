@@ -126,6 +126,31 @@ app.get("/.well-known/oauth-authorization-server", (req, res) => {
   res.json(meta);
 });
 
+// RFC 9728 — OAuth Protected Resource metadata (required by MCP authorization spec)
+app.get("/.well-known/oauth-protected-resource", (req, res) => {
+  const proto = req.headers["x-forwarded-proto"] || req.protocol;
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+  const serverUrl = process.env.PUBLIC_URL || `${proto}://${host}`;
+  res.json({
+    resource: serverUrl,
+    authorization_servers: [serverUrl],
+    scopes_supported: ZOHO_SCOPES.split(","),
+    bearer_methods_supported: ["header"],
+  });
+});
+// Some clients probe with the resource path appended.
+app.get("/.well-known/oauth-protected-resource/mcp", (req, res) => {
+  const proto = req.headers["x-forwarded-proto"] || req.protocol;
+  const host = req.headers["x-forwarded-host"] || req.get("host");
+  const serverUrl = process.env.PUBLIC_URL || `${proto}://${host}`;
+  res.json({
+    resource: `${serverUrl}/mcp`,
+    authorization_servers: [serverUrl],
+    scopes_supported: ZOHO_SCOPES.split(","),
+    bearer_methods_supported: ["header"],
+  });
+});
+
 // ─────────────────────────────────────────────
 // Dynamic Client Registration (MCP spec)
 // ─────────────────────────────────────────────
@@ -390,10 +415,16 @@ function createMcpServer(zohoClient) {
 // Each request creates a fresh server + transport, no in-memory sessions.
 // ─────────────────────────────────────────────
 
-app.post("/mcp", async (req, res) => {
+async function handleMcp(req, res) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Bearer ")) {
-    res.setHeader("WWW-Authenticate", 'Bearer resource_metadata="/.well-known/oauth-authorization-server"');
+    const proto = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.get("host");
+    const serverUrl = process.env.PUBLIC_URL || `${proto}://${host}`;
+    res.setHeader(
+      "WWW-Authenticate",
+      `Bearer realm="mcp", resource_metadata="${serverUrl}/.well-known/oauth-protected-resource"`
+    );
     return res.status(401).json({
       jsonrpc: "2.0",
       error: { code: -32000, message: "Unauthorized — Bearer token required" },
@@ -409,32 +440,31 @@ app.post("/mcp", async (req, res) => {
 
     const mcpServer = createMcpServer(zohoClient);
     const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,   // ← stateless mode for serverless
+      sessionIdGenerator: undefined,
     });
 
     await mcpServer.connect(transport);
     await transport.handleRequest(req, res, req.body);
 
-    // Clean up after response is sent
     res.on("finish", () => {
       transport.close?.();
       mcpServer.close?.();
     });
   } catch (err) {
-    console.error("POST /mcp error:", err);
+    console.error("MCP handler error:", err);
     if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
   }
+}
+
+app.post("/mcp", handleMcp);
+app.post("/", handleMcp);
+
+app.get("/mcp", (_req, res) => {
+  res.status(405).json({ error: "Method not allowed in stateless mode. Use POST." });
 });
 
-app.get("/mcp", async (req, res) => {
-  // In stateless mode, GET /mcp is not supported (no persistent SSE sessions)
-  res.status(405).json({ error: "Method not allowed in stateless mode. Use POST /mcp." });
-});
-
-app.delete("/mcp", async (req, res) => {
-  // Nothing to tear down in stateless mode
-  res.status(204).end();
-});
+app.delete("/mcp", (_req, res) => res.status(204).end());
+app.delete("/", (_req, res) => res.status(204).end());
 
 // ─────────────────────────────────────────────
 // Export for Vercel + optional local listen
