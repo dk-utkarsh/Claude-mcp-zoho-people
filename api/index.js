@@ -55,6 +55,12 @@ const ZOHO_SCOPES = [
   "ZOHOPEOPLE.dashboard.ALL",
 ].join(",");
 
+// Optional: server-stored Zoho OAuth credentials.
+// If set, users don't need to paste Client ID/Secret in Claude Advanced Settings.
+const SERVER_CLIENT_ID = process.env.ZOHO_CLIENT_ID || null;
+const SERVER_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET || null;
+const HAS_SERVER_CREDS = Boolean(SERVER_CLIENT_ID && SERVER_CLIENT_SECRET);
+
 // ─────────────────────────────────────────────
 // Express App
 // ─────────────────────────────────────────────
@@ -88,6 +94,7 @@ app.get("/", (_req, res) => {
     zoho_domain_source: process.env.ZOHO_DOMAIN ? "env" : "default",
     accounts_url: ACCOUNTS_URL,
     people_api_url: `${PEOPLE_URL}/people/api`,
+    server_credentials_configured: HAS_SERVER_CREDS,
     hint: "Your Zoho account's data center (see URL bar on people.zoho.*) MUST match zoho_domain. Mismatch → error 7201.",
   });
 });
@@ -111,7 +118,11 @@ app.get("/.well-known/oauth-authorization-server", (req, res) => {
     token_endpoint_auth_methods_supported: ["client_secret_post"],
     scopes_supported: ZOHO_SCOPES.split(","),
   };
-  if (process.env.ENABLE_DCR === "true") meta.registration_endpoint = `${serverUrl}/register`;
+  // Advertise DCR when server has creds (so Claude auto-registers with our Zoho app)
+  // or when explicitly enabled.
+  if (HAS_SERVER_CREDS || process.env.ENABLE_DCR === "true") {
+    meta.registration_endpoint = `${serverUrl}/register`;
+  }
   res.json(meta);
 });
 
@@ -121,9 +132,12 @@ app.get("/.well-known/oauth-authorization-server", (req, res) => {
 
 app.post("/register", express.json(), (req, res) => {
   const body = req.body || {};
+  // When the server holds Zoho creds, hand them back so Claude uses our pre-registered app.
+  const client_id = HAS_SERVER_CREDS ? SERVER_CLIENT_ID : (body.client_id || crypto.randomUUID());
+  const client_secret = HAS_SERVER_CREDS ? SERVER_CLIENT_SECRET : body.client_secret;
   res.status(201).json({
-    client_id: body.client_id || crypto.randomUUID(),
-    client_secret: body.client_secret || undefined,
+    client_id,
+    client_secret,
     client_name: body.client_name || "Claude Desktop",
     redirect_uris: body.redirect_uris || [],
     grant_types: body.grant_types || ["authorization_code", "refresh_token"],
@@ -137,7 +151,8 @@ app.post("/register", express.json(), (req, res) => {
 // ─────────────────────────────────────────────
 
 app.get("/authorize", (req, res) => {
-  const { client_id, redirect_uri, state, code_challenge, code_challenge_method, response_type } = req.query;
+  const { client_id: qClientId, redirect_uri, state, code_challenge, code_challenge_method, response_type } = req.query;
+  const client_id = HAS_SERVER_CREDS ? SERVER_CLIENT_ID : qClientId;
 
   const zohoUrl = new URL(`${ACCOUNTS_URL}/oauth/v2/auth`);
   zohoUrl.searchParams.set("client_id", client_id);
@@ -158,7 +173,11 @@ app.get("/authorize", (req, res) => {
 // ─────────────────────────────────────────────
 
 app.post("/token", express.urlencoded({ extended: false }), async (req, res) => {
-  const { grant_type, code, client_id, client_secret, redirect_uri, code_verifier, refresh_token } = req.body;
+  const { grant_type, code, client_id: bClientId, client_secret: bClientSecret, redirect_uri, code_verifier, refresh_token } = req.body;
+
+  // Prefer server-stored creds when configured; ignore whatever the client sent.
+  const client_id = HAS_SERVER_CREDS ? SERVER_CLIENT_ID : bClientId;
+  const client_secret = HAS_SERVER_CREDS ? SERVER_CLIENT_SECRET : bClientSecret;
 
   const form = new URLSearchParams();
   form.set("grant_type", grant_type);
