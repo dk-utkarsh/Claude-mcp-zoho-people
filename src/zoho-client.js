@@ -60,13 +60,21 @@ export class ZohoClient {
     if (errObj) {
       const code = errObj.code;
       const msg = errObj.message || JSON.stringify(errObj);
+      console.error("[ZohoClient] Zoho returned error", {
+        httpStatus: res.status,
+        zohoErrorCode: code,
+        zohoMessage: msg,
+        requestUrl: fullUrl,
+        rawResponse: text,
+      });
       throw new Error(
         `Zoho API error ${code}: ${msg}. ` +
         `URL: ${fullUrl}. ` +
         `Domain: ${this.domain}. ` +
-        `Raw response: ${text.slice(0, 500)}`
+        `Raw response: ${text.slice(0, 800)}`
       );
     }
+    console.log("[ZohoClient] OK", { requestUrl: fullUrl, status: res.status });
     return data;
   }
 
