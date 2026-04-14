@@ -112,27 +112,62 @@ export class ZohoClient {
   getTimesheetProjects() { return this.request("/timetracker/getprojects"); }
   getTimesheetJobs() { return this.request("/timetracker/getjobs"); }
 
-  // ── PERFORMANCE MANAGEMENT ──
+  // ── FORM DISCOVERY ──
+  listAllForms() { return this.request("/forms"); }
+
+  // ── PERFORMANCE MANAGEMENT (comprehensive) ──
+  // Uses generic form helpers — form link name passed in since Zoho orgs vary.
+  _getForm(name, i = 1, l = 200) { return this.request(`/forms/${name}/getRecords`, { params: { sIndex: `${i}`, limit: `${l}` } }); }
+  _getFormById(name, id) { return this.request(`/forms/${name}/getDataByID`, { params: { recordId: id } }); }
+  _insertForm(name, data) { return this.request(`/forms/${name}/insertRecord`, { method: "POST", body: { inputData: data } }); }
+  _updateForm(name, id, data) { return this.request(`/forms/${name}/updateRecord`, { method: "POST", body: { recordId: id, inputData: data } }); }
+  _searchForm(name, col, val) { return this.request(`/forms/${name}/getRecords`, { params: { searchColumn: col, searchValue: val } }); }
+
   // Goals
-  getGoals(i = 1, l = 200) { return this.request("/forms/goal/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  getGoalById(id) { return this.request("/forms/goal/getDataByID", { params: { recordId: id } }); }
-  createGoal(data) { return this.request("/forms/goal/insertRecord", { method: "POST", body: { inputData: data } }); }
-  updateGoal(id, data) { return this.request("/forms/goal/updateRecord", { method: "POST", body: { recordId: id, inputData: data } }); }
+  getGoals(i, l) { return this._getForm("goal", i, l); }
+  getGoalById(id) { return this._getFormById("goal", id); }
+  createGoal(data) { return this._insertForm("goal", data); }
+  updateGoal(id, data) { return this._updateForm("goal", id, data); }
+
   // KRAs (Key Result Areas)
-  getKRAs(i = 1, l = 200) { return this.request("/forms/kra/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  getKRAById(id) { return this.request("/forms/kra/getDataByID", { params: { recordId: id } }); }
+  getKRAs(i, l) { return this._getForm("kra", i, l); }
+  getKRAById(id) { return this._getFormById("kra", id); }
+  createKRA(data) { return this._insertForm("kra", data); }
+
   // Skillsets / Competencies
-  getSkillsets(i = 1, l = 200) { return this.request("/forms/skillset/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  // Reviews / Appraisals
-  getReviews(i = 1, l = 200) { return this.request("/forms/review/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  getReviewById(id) { return this.request("/forms/review/getDataByID", { params: { recordId: id } }); }
-  // Feedback
-  getFeedback(i = 1, l = 200) { return this.request("/forms/feedback/getRecords", { params: { sIndex: `${i}`, limit: `${l}` } }); }
-  submitFeedback(data) { return this.request("/forms/feedback/insertRecord", { method: "POST", body: { inputData: data } }); }
-  // Performance records by employee — uses the generic forms search
-  getPerformanceByEmployee(formLinkName, empId) {
-    return this.request(`/forms/${formLinkName}/getRecords`, {
-      params: { searchColumn: "Employee_ID", searchValue: empId },
-    });
+  getSkillsets(i, l) { return this._getForm("skillset", i, l); }
+  getCompetencies(i, l) { return this._getForm("competency", i, l); }
+  getSkills(i, l) { return this._getForm("skill", i, l); }
+
+  // Reviews / Appraisals (generic, plus specific types)
+  getReviews(i, l) { return this._getForm("review", i, l); }
+  getReviewById(id) { return this._getFormById("review", id); }
+  getSelfAppraisals(i, l) { return this._getForm("selfappraisal", i, l); }
+  getManagerReviews(i, l) { return this._getForm("managerreview", i, l); }
+  getPeerReviews(i, l) { return this._getForm("peerreview", i, l); }
+  getMultiraterReviews(i, l) { return this._getForm("multirater", i, l); }
+  get360Feedback(i, l) { return this._getForm("360degree", i, l); }
+
+  // Check-ins and 1:1
+  getCheckIns(i, l) { return this._getForm("checkin", i, l); }
+  getOneOnOnes(i, l) { return this._getForm("one_on_one", i, l); }
+
+  // Continuous Feedback
+  getFeedback(i, l) { return this._getForm("feedback", i, l); }
+  submitFeedback(data) { return this._insertForm("feedback", data); }
+  getContinuousFeedback(i, l) { return this._getForm("continuousfeedback", i, l); }
+
+  // Performance Cycles / Review Cycles
+  getPerformanceCycles(i, l) { return this._getForm("reviewcycle", i, l); }
+
+  // Performance Improvement Plans
+  getPIPs(i, l) { return this._getForm("pip", i, l); }
+
+  // Ratings
+  getRatings(i, l) { return this._getForm("rating", i, l); }
+
+  // Generic: fetch any performance form for a specific employee
+  getPerformanceByEmployee(formLinkName, empId, searchCol = "Employee_ID") {
+    return this._searchForm(formLinkName, searchCol, empId);
   }
 }
