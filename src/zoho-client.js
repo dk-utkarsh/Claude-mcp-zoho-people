@@ -60,21 +60,16 @@ export class ZohoClient {
     if (errObj) {
       const code = errObj.code;
       const msg = errObj.message || JSON.stringify(errObj);
-      console.error("[ZohoClient] Zoho returned error", {
-        httpStatus: res.status,
-        zohoErrorCode: code,
-        zohoMessage: msg,
-        requestUrl: fullUrl,
-        rawResponse: text,
-      });
+      // Multiple separate log lines so each fits in Vercel log viewer.
+      console.error(`ZOHO_ERR_CODE: ${code}`);
+      console.error(`ZOHO_ERR_MSG: ${msg}`);
+      console.error(`ZOHO_REQ_URL: ${fullUrl}`);
+      console.error(`ZOHO_RAW: ${text}`);
       throw new Error(
-        `Zoho API error ${code}: ${msg}. ` +
-        `URL: ${fullUrl}. ` +
-        `Domain: ${this.domain}. ` +
-        `Raw response: ${text.slice(0, 800)}`
+        `Zoho API error ${code}: ${msg}. URL: ${fullUrl}. Raw: ${text.slice(0, 800)}`
       );
     }
-    console.log("[ZohoClient] OK", { requestUrl: fullUrl, status: res.status });
+    console.log(`ZOHO_OK: ${fullUrl} status=${res.status}`);
     return data;
   }
 
