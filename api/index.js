@@ -26,7 +26,9 @@ import { ZohoClient } from "../src/zoho-client.js";
 // Config
 // ─────────────────────────────────────────────
 
-const ZOHO_DOMAIN = process.env.ZOHO_DOMAIN || "in";
+const VALID_DOMAINS = ["com", "eu", "in", "com.au", "jp"];
+const RAW_DOMAIN = (process.env.ZOHO_DOMAIN || "in").trim().toLowerCase().replace(/^\./, "");
+const ZOHO_DOMAIN = VALID_DOMAINS.includes(RAW_DOMAIN) ? RAW_DOMAIN : "in";
 
 const ZOHO_ACCOUNTS = {
   com: "https://accounts.zoho.com",
@@ -35,7 +37,15 @@ const ZOHO_ACCOUNTS = {
   "com.au": "https://accounts.zoho.com.au",
   jp: "https://accounts.zoho.jp",
 };
-const ACCOUNTS_URL = ZOHO_ACCOUNTS[ZOHO_DOMAIN] || ZOHO_ACCOUNTS.com;
+const ZOHO_PEOPLE = {
+  com: "https://people.zoho.com",
+  eu: "https://people.zoho.eu",
+  in: "https://people.zoho.in",
+  "com.au": "https://people.zoho.com.au",
+  jp: "https://people.zoho.jp",
+};
+const ACCOUNTS_URL = ZOHO_ACCOUNTS[ZOHO_DOMAIN];
+const PEOPLE_URL = ZOHO_PEOPLE[ZOHO_DOMAIN];
 
 const ZOHO_SCOPES = [
   "ZOHOPEOPLE.forms.ALL",
@@ -75,6 +85,10 @@ app.get("/", (_req, res) => {
     transport: "streamable-http",
     oauth: true,
     zoho_domain: ZOHO_DOMAIN,
+    zoho_domain_source: process.env.ZOHO_DOMAIN ? "env" : "default",
+    accounts_url: ACCOUNTS_URL,
+    people_api_url: `${PEOPLE_URL}/people/api`,
+    hint: "Your Zoho account's data center (see URL bar on people.zoho.*) MUST match zoho_domain. Mismatch → error 7201.",
   });
 });
 

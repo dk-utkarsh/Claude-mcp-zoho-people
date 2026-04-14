@@ -53,7 +53,18 @@ export class ZohoClient {
 
     const res = await fetch(fullUrl, fetchOpts);
     const text = await res.text();
-    try { return JSON.parse(text); } catch { return { raw: text, status: res.status }; }
+    let data;
+    try { data = JSON.parse(text); } catch { data = { raw: text, status: res.status }; }
+
+    const errCode = data?.response?.errors?.code ?? data?.errorCode;
+    if (errCode === 7201 || errCode === "7201") {
+      throw new Error(
+        `Zoho 7201 (URL Rule mismatch): API call hit ${this.baseUrl} but your OAuth token is for a different data center. ` +
+        `Set ZOHO_DOMAIN env var to match your account (com / in / eu / com.au / jp) and re-authorize. ` +
+        `Current domain: "${this.domain}".`
+      );
+    }
+    return data;
   }
 
   // ── EMPLOYEES ──

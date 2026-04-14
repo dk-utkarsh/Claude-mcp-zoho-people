@@ -91,8 +91,13 @@ ZOHO_DOMAIN=in node api/index.js
 **"Invalid redirect URI" on Zoho consent page:**
 Make sure the redirect URI in Zoho API Console is exactly `https://claude.ai/api/mcp/auth_callback`
 
-**Wrong Zoho region:**
-Set `ZOHO_DOMAIN` to match your account: `in` (India), `com` (US), `eu` (Europe), `com.au` (Australia), `jp` (Japan)
+**Wrong Zoho region / Error 7201 ("URL Rule is not configured"):**
+This means the OAuth token's data center doesn't match the API endpoint the server is hitting. To fix:
+1. Check your Zoho account's DC — log in to Zoho People and look at the URL: `people.zoho.in` → `in`, `people.zoho.com` → `com`, `people.zoho.eu` → `eu`, etc.
+2. In Vercel → Project → Settings → Environment Variables, set `ZOHO_DOMAIN` to match (`in` / `com` / `eu` / `com.au` / `jp`).
+3. **Redeploy** (Vercel env changes don't apply until next deploy): Deployments tab → latest deployment → ••• → Redeploy.
+4. **Re-authorize in Claude** — old tokens were minted against the wrong DC and won't work. Remove the connector and add it again.
+5. Verify by hitting `https://your-app.vercel.app/` — the JSON should show the correct `zoho_domain`, `accounts_url`, and `people_api_url`.
 
 **Function timeout:**
 Vercel free tier has 10s timeout; Pro has 60s. If Zoho API is slow, upgrade to Pro or increase `maxDuration` in vercel.json.
