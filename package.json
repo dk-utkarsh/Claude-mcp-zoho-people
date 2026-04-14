@@ -1,0 +1,19 @@
+{
+  "name": "zoho-people-mcp",
+  "version": "1.0.0",
+  "description": "Zoho People MCP connector for Claude Desktop — deploy on Vercel with one-click OAuth",
+  "type": "module",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "node --watch api/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^4.21.0",
+    "zod": "^3.25.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
