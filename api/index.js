@@ -48,11 +48,12 @@ const ACCOUNTS_URL = ZOHO_ACCOUNTS[ZOHO_DOMAIN];
 const PEOPLE_URL = ZOHO_PEOPLE[ZOHO_DOMAIN];
 
 const ZOHO_SCOPES = [
-  "ZOHOPEOPLE.forms.ALL",
-  "ZOHOPEOPLE.attendance.ALL",
-  "ZOHOPEOPLE.leave.ALL",
-  "ZOHOPEOPLE.timetracker.ALL",
-  "ZOHOPEOPLE.dashboard.ALL",
+  "ZohoPeople.forms.ALL",
+  "ZohoPeople.attendance.ALL",
+  "ZohoPeople.leave.ALL",
+  "ZohoPeople.timetracker.ALL",
+  "ZohoPeople.dashboard.ALL",
+  "ZohoPeople.employee.ALL",
 ].join(",");
 
 // Optional: server-stored Zoho OAuth credentials.
