@@ -47,14 +47,19 @@ const ZOHO_PEOPLE = {
 const ACCOUNTS_URL = ZOHO_ACCOUNTS[ZOHO_DOMAIN];
 const PEOPLE_URL = ZOHO_PEOPLE[ZOHO_DOMAIN];
 
+// Verified against https://www.zoho.com/people/api/scopes.html — all caps.
 const ZOHO_SCOPES = [
-  "ZohoPeople.forms.ALL",
-  "ZohoPeople.attendance.ALL",
-  "ZohoPeople.leave.ALL",
-  "ZohoPeople.timetracker.ALL",
-  "ZohoPeople.dashboard.ALL",
-  "ZohoPeople.employee.ALL",
-  "ZohoPeople.performance.ALL",
+  "ZOHOPEOPLE.forms.ALL",
+  "ZOHOPEOPLE.employee.ALL",
+  "ZOHOPEOPLE.attendance.ALL",
+  "ZOHOPEOPLE.leave.ALL",
+  "ZOHOPEOPLE.timetracker.ALL",
+  "ZOHOPEOPLE.dashboard.ALL",
+  "ZOHOPEOPLE.performance.ALL",
+  "ZOHOPEOPLE.files.ALL",
+  "ZOHOPEOPLE.training.ALL",
+  "ZOHOPEOPLE.onboarding.ALL",
+  "ZOHOPEOPLE.announcement.ALL",
 ].join(",");
 
 // Optional: server-stored Zoho OAuth credentials.
